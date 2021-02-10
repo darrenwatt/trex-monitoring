@@ -20,14 +20,17 @@ def get_stats():
     except requests.exceptions.RequestException as e:
             logging.info('Failed to get stats from host.')
             print(e)
-            return
+            return False
     return resp
 
 
 def build_payload(data):
     efficiency = data['gpus'][0]['efficiency'].split("k")[0]
-    efficiency= int(efficiency)
-    type(efficiency)
+    try:
+        efficiency= int(efficiency)
+    except ValueError as v:
+        logging.info('No efficiency value reported.')
+        efficiency = 0
     payload = {
         "measurement": "trex-stats-whitebox",
         "fields": {
@@ -58,9 +61,10 @@ def write_db(mydict):
 def main():
     while True:
         data = get_stats()
-        payload = build_payload(data)
-        logging.debug(payload)
-        write_db(payload)
+        if data != False:
+            payload = build_payload(data)
+            logging.debug(payload)
+            write_db(payload)
         time.sleep(loop_timer)
 
 
